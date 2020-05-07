@@ -1,0 +1,9 @@
+{
+  "name": "WebVTT2HTML",
+  "description": "Script that takes a WebVTT file of captions and turns into a basic HTML-formatted transcript based on English sentences rules",
+  "license": "MIT",
+  "dependencies": {
+    "sentence-splitter": "^3.2.0",
+    "webvtt-parser": "git+ssh://git@github.com/annevk/webvtt.git"
+  }
+}
