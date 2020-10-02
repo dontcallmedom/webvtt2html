@@ -4,6 +4,7 @@
   "license": "MIT",
   "dependencies": {
     "sentence-splitter": "^3.2.0",
-    "webvtt-parser": "git+ssh://git@github.com/annevk/webvtt.git"
+    "webvtt-parser": "git+ssh://git@github.com/annevk/webvtt.git",
+    "yargs": "^16.0.3"
   }
 }
