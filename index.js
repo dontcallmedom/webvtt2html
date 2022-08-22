@@ -8,7 +8,7 @@ const argv = require('yargs')
         describe: 'Wrap transcript in <div>s (or markup provided with the --wrap-markup- options) each time the WebVTT file includes a cue with an id of the form slide-N',
       })
       .option('wrap-markup-start', {
-        describe: "when --split-by-slide-id is set, this defines the markup used to mark the start of a section in the split",
+        describe: "when --split-by-slide-id is set, this defines the markup used to mark the start of a section in the split, with ### replaced with the slide id",
         default: "<div>"
       })
       .option('wrap-markup-end', {
@@ -41,6 +41,7 @@ function cleanSentence(sentence) {
     sentence = sentence.replace(/^next page\.?/i, '');
     sentence = sentence.replace(/^moving to next slide\.?/i, '');
     sentence = sentence.replace(/^moving to next page\.?/i, '');
+    sentence = sentence.replace(/^going to slide \w+\.?$/i, '');
     sentence = sentence.replace(/, you know, ?/g, ' ');
   }
   return sentence;
@@ -61,43 +62,30 @@ if (argv["clean-spoken-en"]) {
 const sentences = splitter.split(cues.map(c => c.text).join(' '))
       .map(s => s.raw.trim()).filter(s => s);
 const divs = [];
-let div = [];
+let section = [];
 let sentencesCursor = 0;
-let slideNum = 2;
+const cueSections = [];
 cues.forEach(c => {
-  if (c.id.startsWith("slide-" + slideNum)) {
-    divs.push(div);
-    div = [];
-  } else {
-    return;
+  if (c.id.startsWith("slide-")) {
+    if (section?.length) {
+      cueSections.push(section);
+    }
+    section = [];
   }
-  while (sentencesCursor < sentences.length) {
-    const sentence = sentences[sentencesCursor];
-    if (sentence.startsWith(c.text.split('.')[0])) {
-      break;
-    }
-      if (!sentence.match(/^slide [a-z0-9]+\.?$/i)) {
-        div.push(cleanSentence(sentence));
-      }
-    sentencesCursor++;
-    }
-  slideNum++;
+  if (section) {
+    section.push(c);
+  }
 });
-// dealing with last slide
-divs.push(div);
-div = [];
-while (sentencesCursor < sentences.length) {
-  let sentence = sentences[sentencesCursor];
-  if (!sentence.match(/^slide [a-z0-9]*\.?$/i)) {
-    div.push(cleanSentence(sentence));
-  }
-  sentencesCursor++;
+if (section?.length) cueSections.push(section);
+for (let section of cueSections) {
+  const sentences = splitter.split(section.map(c => c.text).join(' '))
+	.map(s => s.raw.trim()).filter(s => s);
+  divs.push(sentences.map(cleanSentence));
 }
-divs.push(div);
-let content;
+let content = "";
 if (argv["split-by-slide-id"]) {
-  for (let i = 1 ; i < divs.length; i++) {
-    content += argv["wrap-markup-start"];
+  for (let i = 0 ; i < divs.length; i++) {
+    content += argv["wrap-markup-start"].replace(/###/g, i+1);
     content += "<p>" + divs[i].join("</p>\n<p>") + "</p>";
     content += argv["wrap-markup-end"] + "\n\n";
   }
